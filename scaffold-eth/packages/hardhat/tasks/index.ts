@@ -1,12 +1,18 @@
 import { task } from "hardhat/config";
 
+// Global variable to store the latest deployed address
+let lastDeployedAddress: string;
+
 task("deploy").setAction(async (_args, hre) => {
   const Vigil = await hre.ethers.getContractFactory("Vigil");
   const vigil = await Vigil.deploy();
   const vigilAddr = await vigil.waitForDeployment();
-
-  console.log(`Vigil address: ${vigilAddr.target}`);
-  return vigilAddr.target;
+  
+  // Store address in the global variable
+  lastDeployedAddress = vigilAddr.target as string;
+  
+  console.log(`Vigil address: ${lastDeployedAddress}`);
+  return lastDeployedAddress;
 });
 
 task("create-secret")
@@ -42,9 +48,11 @@ task("check-secret")
 task("full-vigil").setAction(async (_args, hre) => {
   await hre.run("compile");
 
-  const address = await hre.run("deploy");
+  await hre.run("deploy");
+  // Use the global variable instead of the return value
+  const address = lastDeployedAddress;
 
-  console.log("current forder ", address);
+  console.log("Using contract at:", address);
   await hre.run("create-secret", { address });
   await hre.run("check-secret", { address });
 });
