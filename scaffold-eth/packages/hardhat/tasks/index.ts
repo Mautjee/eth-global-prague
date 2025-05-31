@@ -5,8 +5,8 @@ task("deploy").setAction(async (_args, hre) => {
   const vigil = await Vigil.deploy();
   const vigilAddr = await vigil.waitForDeployment();
 
-  //console.log(`Vigil address: ${vigilAddr.target}`);
-  return vigilAddr;
+  console.log(`Vigil address: ${vigilAddr.target}`);
+  return vigilAddr.target;
 });
 
 task("create-secret")
@@ -14,11 +14,7 @@ task("create-secret")
   .setAction(async (args, hre) => {
     const vigil = await hre.ethers.getContractAt("Vigil", args.address);
 
-    const tx = await vigil.createSecret(
-      "ingredient",
-      30 /* seconds */,
-      Buffer.from("brussels sprouts"),
-    );
+    const tx = await vigil.createSecret("ingredient", 30 /* seconds */, Buffer.from("brussels sprouts"));
     console.log("Storing a secret in", tx.hash);
   });
 
@@ -37,20 +33,19 @@ task("check-secret")
     }
     console.log("Waiting...");
 
-    await new Promise((resolve) => setTimeout(resolve, 30_000));
+    await new Promise(resolve => setTimeout(resolve, 30_000));
     console.log("Checking the secret again");
     const secret = await vigil.revealSecret.staticCallResult(0); // Get the value.
-    console.log(
-      "The secret ingredient is",
-      Buffer.from(secret[0].slice(2), "hex").toString(),
-    );
+    console.log("The secret ingredient is", Buffer.from(secret[0].slice(2), "hex").toString());
   });
 
 task("full-vigil").setAction(async (_args, hre) => {
   await hre.run("compile");
 
   const address = await hre.run("deploy");
-  console.log("adress value:", address);
+
+  console.log("current forder ", address);
   await hre.run("create-secret", { address });
   await hre.run("check-secret", { address });
 });
+

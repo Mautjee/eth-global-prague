@@ -14,22 +14,22 @@ import generateTsAbis from "./scripts/generateTsAbis";
 import "./tasks";
 
 // Custom task to print all configured account addresses
-task("accounts", "Prints the list of addresses configured for the current network")
-  .setAction(async (taskArgs, hre) => {
-    const signers = await hre.ethers.getSigners();
-    for (const s of signers) {
-      console.log(s.address);
-    }
-  });
+task("accounts", "Prints the list of addresses configured for the current network").setAction(async (taskArgs, hre) => {
+  const signers = await hre.ethers.getSigners();
+  for (const s of signers) {
+    console.log(s.address);
+  }
+});
 
-  
-const accounts = process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : {
-  mnemonic: "test test test test test test test test test test test junk",
-  path: "m/44'/60'/0'/0",
-  initialIndex: 0,
-  count: 20,
-  passphrase: "",
-};
+const accounts = process.env.PRIVATE_KEY
+  ? [process.env.PRIVATE_KEY]
+  : {
+      mnemonic: "test test test test test test test test test test test junk",
+      path: "m/44'/60'/0'/0",
+      initialIndex: 0,
+      count: 20,
+      passphrase: "",
+    };
 
 // If not set, it uses ours Alchemy's default API key.
 // You can get your own at https://dashboard.alchemyapi.io
