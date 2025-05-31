@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Oasis SDK.
+oasis-runtime-sdk = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "runtime-sdk/v0.14.0" }
+module-evm = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "runtime-sdk/v0.14.0", package = "oasis-runtime-sdk-evm" }
+rofl-utils = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "rofl-utils/v0.1.1" }
+
+async-trait = "0.1.77"
+reqwest = "0.12.18"
+tokio = { version = "1.45.1", features = ["full"] }
+ethabi = "18.0.0"
