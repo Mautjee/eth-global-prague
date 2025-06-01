@@ -5,15 +5,20 @@
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
-  31337: {
-    YourContract: {
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  23295: {
+    Vault: {
+      address: "0x17919fD0bfF0117f2eb9901dfF78077411F6Cfb1",
       abi: [
         {
           inputs: [
             {
+              internalType: "bytes21",
+              name: "_appId",
+              type: "bytes21",
+            },
+            {
               internalType: "address",
-              name: "_owner",
+              name: "_governor",
               type: "address",
             },
           ],
@@ -21,44 +26,721 @@ const deployedContracts = {
           type: "constructor",
         },
         {
+          inputs: [],
+          name: "EnforcedPause",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ExpectedPause",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "OwnableInvalidOwner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "OwnableUnauthorizedAccount",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ReentrancyGuardReentrantCall",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newPeriod",
+              type: "uint256",
+            },
+          ],
+          name: "ExpirationPeriodUpdated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "vaultProposalId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "governanceProposalId",
+              type: "uint256",
+            },
+          ],
+          name: "GovernanceProposalCreated",
+          type: "event",
+        },
+        {
           anonymous: false,
           inputs: [
             {
               indexed: true,
               internalType: "address",
-              name: "greetingSetter",
+              name: "newGovernor",
+              type: "address",
+            },
+          ],
+          name: "GovernorUpdated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "previousOwner",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "Paused",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "approver",
+              type: "address",
+            },
+          ],
+          name: "ProposalApproved",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "ProposalExpired",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "rejecter",
+              type: "address",
+            },
+          ],
+          name: "ProposalRejected",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "requester",
               type: "address",
             },
             {
               indexed: false,
               internalType: "string",
-              name: "newGreeting",
+              name: "sqlQuery",
               type: "string",
             },
+          ],
+          name: "ProposalSubmitted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
             {
-              indexed: false,
-              internalType: "bool",
-              name: "premium",
-              type: "bool",
-            },
-            {
-              indexed: false,
+              indexed: true,
               internalType: "uint256",
-              name: "value",
+              name: "proposalId",
               type: "uint256",
             },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "requester",
+              type: "address",
+            },
           ],
-          name: "GreetingChange",
+          name: "QueryCompleted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "Unpaused",
           type: "event",
         },
         {
           inputs: [],
-          name: "greeting",
+          name: "appId",
           outputs: [
             {
-              internalType: "string",
+              internalType: "bytes21",
               name: "",
+              type: "bytes21",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "approveProposal",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "checkAndUpdateExpiredProposals",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "completedQueries",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "string",
+              name: "originalQuery",
               type: "string",
+            },
+            {
+              internalType: "string",
+              name: "publicKey",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "encryptedResult",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "completedTimestamp",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "string",
+              name: "encryptedResult",
+              type: "string",
+            },
+          ],
+          name: "consumeProposal",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "createGovernanceProposal",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "defaultExpirationPeriod",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "extension",
+              type: "uint256",
+            },
+          ],
+          name: "extendProposalExpiration",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "offset",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "limit",
+              type: "uint256",
+            },
+          ],
+          name: "getApprovedProposals",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "id",
+                  type: "uint256",
+                },
+                {
+                  internalType: "address",
+                  name: "requester",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "sqlQuery",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "publicKey",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "timestamp",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "expirationTime",
+                  type: "uint256",
+                },
+                {
+                  internalType: "enum Vault.ProposalStatus",
+                  name: "status",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint256",
+                  name: "governanceProposalId",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vault.QueryProposal[]",
+              name: "",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "getCompletedQuery",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "proposalId",
+                  type: "uint256",
+                },
+                {
+                  internalType: "string",
+                  name: "originalQuery",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "publicKey",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "encryptedResult",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "completedTimestamp",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vault.CompletedQuery",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "getGovernanceProposalId",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "getProposal",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "id",
+                  type: "uint256",
+                },
+                {
+                  internalType: "address",
+                  name: "requester",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "sqlQuery",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "publicKey",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "timestamp",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "expirationTime",
+                  type: "uint256",
+                },
+                {
+                  internalType: "enum Vault.ProposalStatus",
+                  name: "status",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint256",
+                  name: "governanceProposalId",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vault.QueryProposal",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "enum Vault.ProposalStatus",
+              name: "status",
+              type: "uint8",
+            },
+          ],
+          name: "getProposalsByStatus",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "id",
+                  type: "uint256",
+                },
+                {
+                  internalType: "address",
+                  name: "requester",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "sqlQuery",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "publicKey",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "timestamp",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "expirationTime",
+                  type: "uint256",
+                },
+                {
+                  internalType: "enum Vault.ProposalStatus",
+                  name: "status",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint256",
+                  name: "governanceProposalId",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vault.QueryProposal[]",
+              name: "",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "user",
+              type: "address",
+            },
+          ],
+          name: "getUserProposals",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint256",
+                  name: "id",
+                  type: "uint256",
+                },
+                {
+                  internalType: "address",
+                  name: "requester",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "sqlQuery",
+                  type: "string",
+                },
+                {
+                  internalType: "string",
+                  name: "publicKey",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "timestamp",
+                  type: "uint256",
+                },
+                {
+                  internalType: "uint256",
+                  name: "expirationTime",
+                  type: "uint256",
+                },
+                {
+                  internalType: "enum Vault.ProposalStatus",
+                  name: "status",
+                  type: "uint8",
+                },
+                {
+                  internalType: "uint256",
+                  name: "governanceProposalId",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vault.QueryProposal[]",
+              name: "",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "governanceProposalsExecuted",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "governor",
+          outputs: [
+            {
+              internalType: "contract IGovernor",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "governanceProposalId",
+              type: "uint256",
+            },
+          ],
+          name: "isGovernanceProposalExecuted",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
             },
           ],
           stateMutability: "view",
@@ -79,7 +761,14 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "premium",
+          name: "pause",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "paused",
           outputs: [
             {
               internalType: "bool",
@@ -93,19 +782,1369 @@ const deployedContracts = {
         {
           inputs: [
             {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "proposals",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "id",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "requester",
+              type: "address",
+            },
+            {
               internalType: "string",
-              name: "_newGreeting",
+              name: "sqlQuery",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "publicKey",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "timestamp",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "expirationTime",
+              type: "uint256",
+            },
+            {
+              internalType: "enum Vault.ProposalStatus",
+              name: "status",
+              type: "uint8",
+            },
+            {
+              internalType: "uint256",
+              name: "governanceProposalId",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "enum Vault.ProposalStatus",
+              name: "",
+              type: "uint8",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "proposalsByStatus",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "string",
+              name: "sqlQuery",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "publicKey",
               type: "string",
             },
           ],
-          name: "setGreeting",
+          name: "proposeQuery",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "rejectProposal",
           outputs: [],
-          stateMutability: "payable",
+          stateMutability: "nonpayable",
           type: "function",
         },
         {
           inputs: [],
-          name: "totalCounter",
+          name: "renounceOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "period",
+              type: "uint256",
+            },
+          ],
+          name: "setDefaultExpirationPeriod",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "_governor",
+              type: "address",
+            },
+          ],
+          name: "setGovernor",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "unpause",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "userProposals",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        paused: "@openzeppelin/contracts/utils/Pausable.sol",
+        owner: "@openzeppelin/contracts/access/Ownable.sol",
+        renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+        transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+      },
+    },
+    VaultGovernor: {
+      address: "0x19Bd734aaE018Dc1062239d220d5291c1CE3B268",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "contract IVotes",
+              name: "_token",
+              type: "address",
+            },
+            {
+              internalType: "contract TimelockController",
+              name: "_timelock",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "initialOwner",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [],
+          name: "CheckpointUnorderedInsertion",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "FailedCall",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+          ],
+          name: "GovernorAlreadyCastVote",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorAlreadyQueuedProposal",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "GovernorDisabledDeposit",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "proposer",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "votes",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "threshold",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorInsufficientProposerVotes",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "targets",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "calldatas",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "values",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorInvalidProposalLength",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "quorumNumerator",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "quorumDenominator",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorInvalidQuorumFraction",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+          ],
+          name: "GovernorInvalidSignature",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "GovernorInvalidVoteParams",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "GovernorInvalidVoteType",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "votingPeriod",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorInvalidVotingPeriod",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorNonexistentProposal",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "GovernorNotQueuedProposal",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "GovernorOnlyExecutor",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "GovernorQueueNotImplemented",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "proposer",
+              type: "address",
+            },
+          ],
+          name: "GovernorRestrictedProposer",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "GovernorUnableToCancel",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "enum IGovernor.ProposalState",
+              name: "current",
+              type: "uint8",
+            },
+            {
+              internalType: "bytes32",
+              name: "expectedStates",
+              type: "bytes32",
+            },
+          ],
+          name: "GovernorUnexpectedProposalState",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "currentNonce",
+              type: "uint256",
+            },
+          ],
+          name: "InvalidAccountNonce",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "InvalidShortString",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "OwnableInvalidOwner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "OwnableUnauthorizedAccount",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint8",
+              name: "bits",
+              type: "uint8",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "SafeCastOverflowedUintDowncast",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "string",
+              name: "str",
+              type: "string",
+            },
+          ],
+          name: "StringTooLong",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [],
+          name: "EIP712DomainChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "previousOwner",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "ProposalCanceled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "proposer",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              indexed: false,
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              indexed: false,
+              internalType: "string[]",
+              name: "signatures",
+              type: "string[]",
+            },
+            {
+              indexed: false,
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "voteStart",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "voteEnd",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "string",
+              name: "description",
+              type: "string",
+            },
+          ],
+          name: "ProposalCreated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "ProposalExecuted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "etaSeconds",
+              type: "uint256",
+            },
+          ],
+          name: "ProposalQueued",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "oldProposalThreshold",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newProposalThreshold",
+              type: "uint256",
+            },
+          ],
+          name: "ProposalThresholdSet",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "oldQuorumNumerator",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newQuorumNumerator",
+              type: "uint256",
+            },
+          ],
+          name: "QuorumNumeratorUpdated",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "address",
+              name: "oldTimelock",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "newTimelock",
+              type: "address",
+            },
+          ],
+          name: "TimelockChange",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "weight",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "string",
+              name: "reason",
+              type: "string",
+            },
+          ],
+          name: "VoteCast",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "weight",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "string",
+              name: "reason",
+              type: "string",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "params",
+              type: "bytes",
+            },
+          ],
+          name: "VoteCastWithParams",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "oldVotingDelay",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newVotingDelay",
+              type: "uint256",
+            },
+          ],
+          name: "VotingDelaySet",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "oldVotingPeriod",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newVotingPeriod",
+              type: "uint256",
+            },
+          ],
+          name: "VotingPeriodSet",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "BALLOT_TYPEHASH",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "CLOCK_MODE",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "COUNTING_MODE",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "EXTENDED_BALLOT_TYPEHASH",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+          ],
+          name: "addAuthorizedVoter",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "authorizedVoters",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "descriptionHash",
+              type: "bytes32",
+            },
+          ],
+          name: "cancel",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+          ],
+          name: "castVote",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+            {
+              internalType: "bytes",
+              name: "signature",
+              type: "bytes",
+            },
+          ],
+          name: "castVoteBySig",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              internalType: "string",
+              name: "reason",
+              type: "string",
+            },
+          ],
+          name: "castVoteWithReason",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              internalType: "string",
+              name: "reason",
+              type: "string",
+            },
+            {
+              internalType: "bytes",
+              name: "params",
+              type: "bytes",
+            },
+          ],
+          name: "castVoteWithReasonAndParams",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "support",
+              type: "uint8",
+            },
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+            {
+              internalType: "string",
+              name: "reason",
+              type: "string",
+            },
+            {
+              internalType: "bytes",
+              name: "params",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes",
+              name: "signature",
+              type: "bytes",
+            },
+          ],
+          name: "castVoteWithReasonAndParamsBySig",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "clock",
+          outputs: [
+            {
+              internalType: "uint48",
+              name: "",
+              type: "uint48",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "eip712Domain",
+          outputs: [
+            {
+              internalType: "bytes1",
+              name: "fields",
+              type: "bytes1",
+            },
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "version",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "chainId",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "verifyingContract",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256[]",
+              name: "extensions",
+              type: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "descriptionHash",
+              type: "bytes32",
+            },
+          ],
+          name: "execute",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "descriptionHash",
+              type: "bytes32",
+            },
+          ],
+          name: "getProposalId",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+          ],
+          name: "getVotes",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "params",
+              type: "bytes",
+            },
+          ],
+          name: "getVotesWithParams",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "hasVoted",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "descriptionHash",
+              type: "bytes32",
+            },
+          ],
+          name: "hashProposal",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "minVotesRequired",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "name",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "nonces",
           outputs: [
             {
               internalType: "uint256",
@@ -123,8 +2162,209 @@ const deployedContracts = {
               name: "",
               type: "address",
             },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
           ],
-          name: "userGreetingCounter",
+          name: "onERC1155BatchReceived",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          name: "onERC1155Received",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          name: "onERC721Received",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalDeadline",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalEta",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalNeedsQueuing",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalProposer",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalSnapshot",
           outputs: [
             {
               internalType: "uint256",
@@ -137,7 +2377,1512 @@ const deployedContracts = {
         },
         {
           inputs: [],
-          name: "withdraw",
+          name: "proposalThreshold",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "proposalVotes",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "againstVotes",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "forVotes",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "abstainVotes",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "string",
+              name: "description",
+              type: "string",
+            },
+          ],
+          name: "propose",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "calldatas",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "descriptionHash",
+              type: "bytes32",
+            },
+          ],
+          name: "queue",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "blockNumber",
+              type: "uint256",
+            },
+          ],
+          name: "quorum",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "quorumDenominator",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+          ],
+          name: "quorumNumerator",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "quorumNumerator",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "relay",
+          outputs: [],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "voter",
+              type: "address",
+            },
+          ],
+          name: "removeAuthorizedVoter",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "renounceOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "_minVotes",
+              type: "uint256",
+            },
+          ],
+          name: "setMinVotesRequired",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newProposalThreshold",
+              type: "uint256",
+            },
+          ],
+          name: "setProposalThreshold",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint48",
+              name: "newVotingDelay",
+              type: "uint48",
+            },
+          ],
+          name: "setVotingDelay",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint32",
+              name: "newVotingPeriod",
+              type: "uint32",
+            },
+          ],
+          name: "setVotingPeriod",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "proposalId",
+              type: "uint256",
+            },
+          ],
+          name: "state",
+          outputs: [
+            {
+              internalType: "enum IGovernor.ProposalState",
+              name: "",
+              type: "uint8",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes4",
+              name: "interfaceId",
+              type: "bytes4",
+            },
+          ],
+          name: "supportsInterface",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "timelock",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "token",
+          outputs: [
+            {
+              internalType: "contract IERC5805",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newQuorumNumerator",
+              type: "uint256",
+            },
+          ],
+          name: "updateQuorumNumerator",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "contract TimelockController",
+              name: "newTimelock",
+              type: "address",
+            },
+          ],
+          name: "updateTimelock",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "version",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "votingDelay",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "votingPeriod",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          stateMutability: "payable",
+          type: "receive",
+        },
+      ],
+      inheritedFunctions: {
+        BALLOT_TYPEHASH:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        CLOCK_MODE:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        COUNTING_MODE:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        EXTENDED_BALLOT_TYPEHASH:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        cancel:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        castVote:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        castVoteBySig:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        castVoteWithReason:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        castVoteWithReasonAndParams:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        castVoteWithReasonAndParamsBySig:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        clock:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        eip712Domain:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        execute:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        getProposalId:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        getVotes:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        getVotesWithParams:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        hasVoted:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        hashProposal:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        name: "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        nonces:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        onERC1155BatchReceived:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        onERC1155Received:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        onERC721Received:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalDeadline:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalEta:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalNeedsQueuing:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalProposer:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalSnapshot:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        proposalThreshold:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        propose:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        queue:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        quorum:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        relay:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        state:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        supportsInterface:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        version:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        votingDelay:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        votingPeriod:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        setProposalThreshold:
+          "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol",
+        setVotingDelay:
+          "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol",
+        setVotingPeriod:
+          "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol",
+        proposalVotes:
+          "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol",
+        token:
+          "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol",
+        quorumDenominator:
+          "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol",
+        quorumNumerator:
+          "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol",
+        updateQuorumNumerator:
+          "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol",
+        timelock:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        updateTimelock:
+          "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol",
+        owner: "@openzeppelin/contracts/access/Ownable.sol",
+        renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+        transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+      },
+    },
+    VaultTimelock: {
+      address: "0x58BfD7A7D496F4726943780B73b2853067e97075",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "minDelay",
+              type: "uint256",
+            },
+            {
+              internalType: "address[]",
+              name: "proposers",
+              type: "address[]",
+            },
+            {
+              internalType: "address[]",
+              name: "executors",
+              type: "address[]",
+            },
+            {
+              internalType: "address",
+              name: "admin",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [],
+          name: "AccessControlBadConfirmation",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "neededRole",
+              type: "bytes32",
+            },
+          ],
+          name: "AccessControlUnauthorizedAccount",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "FailedCall",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "delay",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "minDelay",
+              type: "uint256",
+            },
+          ],
+          name: "TimelockInsufficientDelay",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "targets",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "payloads",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "values",
+              type: "uint256",
+            },
+          ],
+          name: "TimelockInvalidOperationLength",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "caller",
+              type: "address",
+            },
+          ],
+          name: "TimelockUnauthorizedCaller",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "predecessorId",
+              type: "bytes32",
+            },
+          ],
+          name: "TimelockUnexecutedPredecessor",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "operationId",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "expectedStates",
+              type: "bytes32",
+            },
+          ],
+          name: "TimelockUnexpectedOperationState",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+          ],
+          name: "CallExecuted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+          ],
+          name: "CallSalt",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              indexed: false,
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "delay",
+              type: "uint256",
+            },
+          ],
+          name: "CallScheduled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "Cancelled",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "oldDuration",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newDuration",
+              type: "uint256",
+            },
+          ],
+          name: "MinDelayChange",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "previousAdminRole",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "newAdminRole",
+              type: "bytes32",
+            },
+          ],
+          name: "RoleAdminChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+          ],
+          name: "RoleGranted",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+          ],
+          name: "RoleRevoked",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "CANCELLER_ROLE",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "DEFAULT_ADMIN_ROLE",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "EXECUTOR_ROLE",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "PROPOSER_ROLE",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "cancel",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "payload",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+          ],
+          name: "execute",
+          outputs: [],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "payloads",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+          ],
+          name: "executeBatch",
+          outputs: [],
+          stateMutability: "payable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "getMinDelay",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "getOperationState",
+          outputs: [
+            {
+              internalType: "enum TimelockController.OperationState",
+              name: "",
+              type: "uint8",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+          ],
+          name: "getRoleAdmin",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "getTimestamp",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "grantRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "hasRole",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+          ],
+          name: "hashOperation",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "payloads",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+          ],
+          name: "hashOperationBatch",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "pure",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "isOperation",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "isOperationDone",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "isOperationPending",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "id",
+              type: "bytes32",
+            },
+          ],
+          name: "isOperationReady",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          name: "onERC1155BatchReceived",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          name: "onERC1155Received",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          name: "onERC721Received",
+          outputs: [
+            {
+              internalType: "bytes4",
+              name: "",
+              type: "bytes4",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "callerConfirmation",
+              type: "address",
+            },
+          ],
+          name: "renounceRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "role",
+              type: "bytes32",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "revokeRole",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "target",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "data",
+              type: "bytes",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "delay",
+              type: "uint256",
+            },
+          ],
+          name: "schedule",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address[]",
+              name: "targets",
+              type: "address[]",
+            },
+            {
+              internalType: "uint256[]",
+              name: "values",
+              type: "uint256[]",
+            },
+            {
+              internalType: "bytes[]",
+              name: "payloads",
+              type: "bytes[]",
+            },
+            {
+              internalType: "bytes32",
+              name: "predecessor",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256",
+              name: "delay",
+              type: "uint256",
+            },
+          ],
+          name: "scheduleBatch",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes4",
+              name: "interfaceId",
+              type: "bytes4",
+            },
+          ],
+          name: "supportsInterface",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "newDelay",
+              type: "uint256",
+            },
+          ],
+          name: "updateDelay",
           outputs: [],
           stateMutability: "nonpayable",
           type: "function",
@@ -145,6 +3890,1435 @@ const deployedContracts = {
         {
           stateMutability: "payable",
           type: "receive",
+        },
+      ],
+      inheritedFunctions: {
+        CANCELLER_ROLE:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        DEFAULT_ADMIN_ROLE:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        EXECUTOR_ROLE:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        PROPOSER_ROLE:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        cancel: "@openzeppelin/contracts/governance/TimelockController.sol",
+        execute: "@openzeppelin/contracts/governance/TimelockController.sol",
+        executeBatch:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        getMinDelay:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        getOperationState:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        getRoleAdmin:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        getTimestamp:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        grantRole: "@openzeppelin/contracts/governance/TimelockController.sol",
+        hasRole: "@openzeppelin/contracts/governance/TimelockController.sol",
+        hashOperation:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        hashOperationBatch:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        isOperation:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        isOperationDone:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        isOperationPending:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        isOperationReady:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        onERC1155BatchReceived:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        onERC1155Received:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        onERC721Received:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        renounceRole:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        revokeRole: "@openzeppelin/contracts/governance/TimelockController.sol",
+        schedule: "@openzeppelin/contracts/governance/TimelockController.sol",
+        scheduleBatch:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        supportsInterface:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+        updateDelay:
+          "@openzeppelin/contracts/governance/TimelockController.sol",
+      },
+    },
+    VaultToken: {
+      address: "0xaE27308e1976F0068ae7a71a438E31b68F949C2F",
+      abi: [
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "initialOwner",
+              type: "address",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "constructor",
+        },
+        {
+          inputs: [],
+          name: "CheckpointUnorderedInsertion",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ECDSAInvalidSignature",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "length",
+              type: "uint256",
+            },
+          ],
+          name: "ECDSAInvalidSignatureLength",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "bytes32",
+              name: "s",
+              type: "bytes32",
+            },
+          ],
+          name: "ECDSAInvalidSignatureS",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "increasedSupply",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "cap",
+              type: "uint256",
+            },
+          ],
+          name: "ERC20ExceededSafeSupply",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "allowance",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "needed",
+              type: "uint256",
+            },
+          ],
+          name: "ERC20InsufficientAllowance",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "balance",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "needed",
+              type: "uint256",
+            },
+          ],
+          name: "ERC20InsufficientBalance",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "approver",
+              type: "address",
+            },
+          ],
+          name: "ERC20InvalidApprover",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "receiver",
+              type: "address",
+            },
+          ],
+          name: "ERC20InvalidReceiver",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "sender",
+              type: "address",
+            },
+          ],
+          name: "ERC20InvalidSender",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+          ],
+          name: "ERC20InvalidSpender",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "deadline",
+              type: "uint256",
+            },
+          ],
+          name: "ERC2612ExpiredSignature",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "signer",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "ERC2612InvalidSigner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+            {
+              internalType: "uint48",
+              name: "clock",
+              type: "uint48",
+            },
+          ],
+          name: "ERC5805FutureLookup",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "ERC6372InconsistentClock",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "currentNonce",
+              type: "uint256",
+            },
+          ],
+          name: "InvalidAccountNonce",
+          type: "error",
+        },
+        {
+          inputs: [],
+          name: "InvalidShortString",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "OwnableInvalidOwner",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "OwnableUnauthorizedAccount",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint8",
+              name: "bits",
+              type: "uint8",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "SafeCastOverflowedUintDowncast",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "string",
+              name: "str",
+              type: "string",
+            },
+          ],
+          name: "StringTooLong",
+          type: "error",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "expiry",
+              type: "uint256",
+            },
+          ],
+          name: "VotesExpiredSignature",
+          type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "Approval",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "delegator",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "fromDelegate",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "toDelegate",
+              type: "address",
+            },
+          ],
+          name: "DelegateChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "delegate",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "previousVotes",
+              type: "uint256",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "newVotes",
+              type: "uint256",
+            },
+          ],
+          name: "DelegateVotesChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [],
+          name: "EIP712DomainChanged",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "previousOwner",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "OwnershipTransferred",
+          type: "event",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "Transfer",
+          type: "event",
+        },
+        {
+          inputs: [],
+          name: "CLOCK_MODE",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "DOMAIN_SEPARATOR",
+          outputs: [
+            {
+              internalType: "bytes32",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "MAX_SUPPLY",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+          ],
+          name: "allowance",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "approve",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "balanceOf",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint32",
+              name: "pos",
+              type: "uint32",
+            },
+          ],
+          name: "checkpoints",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "uint48",
+                  name: "_key",
+                  type: "uint48",
+                },
+                {
+                  internalType: "uint208",
+                  name: "_value",
+                  type: "uint208",
+                },
+              ],
+              internalType: "struct Checkpoints.Checkpoint208",
+              name: "",
+              type: "tuple",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "clock",
+          outputs: [
+            {
+              internalType: "uint48",
+              name: "",
+              type: "uint48",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "decimals",
+          outputs: [
+            {
+              internalType: "uint8",
+              name: "",
+              type: "uint8",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "delegatee",
+              type: "address",
+            },
+          ],
+          name: "delegate",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "delegatee",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "nonce",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "expiry",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "v",
+              type: "uint8",
+            },
+            {
+              internalType: "bytes32",
+              name: "r",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "s",
+              type: "bytes32",
+            },
+          ],
+          name: "delegateBySig",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "delegates",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "eip712Domain",
+          outputs: [
+            {
+              internalType: "bytes1",
+              name: "fields",
+              type: "bytes1",
+            },
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "string",
+              name: "version",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "chainId",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "verifyingContract",
+              type: "address",
+            },
+            {
+              internalType: "bytes32",
+              name: "salt",
+              type: "bytes32",
+            },
+            {
+              internalType: "uint256[]",
+              name: "extensions",
+              type: "uint256[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+          ],
+          name: "getPastTotalSupply",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "timepoint",
+              type: "uint256",
+            },
+          ],
+          name: "getPastVotes",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "getVotes",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "name",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "nonces",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "numCheckpoints",
+          outputs: [
+            {
+              internalType: "uint32",
+              name: "",
+              type: "uint32",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "owner",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "spender",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "deadline",
+              type: "uint256",
+            },
+            {
+              internalType: "uint8",
+              name: "v",
+              type: "uint8",
+            },
+            {
+              internalType: "bytes32",
+              name: "r",
+              type: "bytes32",
+            },
+            {
+              internalType: "bytes32",
+              name: "s",
+              type: "bytes32",
+            },
+          ],
+          name: "permit",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "renounceOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "symbol",
+          outputs: [
+            {
+              internalType: "string",
+              name: "",
+              type: "string",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "totalSupply",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "transfer",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "from",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "to",
+              type: "address",
+            },
+            {
+              internalType: "uint256",
+              name: "value",
+              type: "uint256",
+            },
+          ],
+          name: "transferFrom",
+          outputs: [
+            {
+              internalType: "bool",
+              name: "",
+              type: "bool",
+            },
+          ],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "newOwner",
+              type: "address",
+            },
+          ],
+          name: "transferOwnership",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {
+        allowance:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        approve:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        balanceOf:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        decimals:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        name: "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        symbol: "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        totalSupply:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        transfer:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        transferFrom:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        DOMAIN_SEPARATOR:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
+        eip712Domain:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        nonces: "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        permit:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
+        CLOCK_MODE:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        checkpoints:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        clock: "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        delegate:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        delegateBySig:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        delegates:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        getPastTotalSupply:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        getPastVotes:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        getVotes:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        numCheckpoints:
+          "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol",
+        owner: "@openzeppelin/contracts/access/Ownable.sol",
+        renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+        transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
+      },
+    },
+    Vigil: {
+      address: "0x18dBe2F38370193C02848559794e6777dead9cc0",
+      abi: [
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+          ],
+          name: "SecretCreated",
+          type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "_lastSeen",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "_metas",
+          outputs: [
+            {
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "longevity",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "longevity",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "secret",
+              type: "bytes",
+            },
+          ],
+          name: "createSecret",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "getLastSeen",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "offset",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "count",
+              type: "uint256",
+            },
+          ],
+          name: "getMetas",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "creator",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "name",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "longevity",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vigil.SecretMetadata[]",
+              name: "",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "refreshSecrets",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+          ],
+          name: "revealSecret",
+          outputs: [
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ],
+      inheritedFunctions: {},
+    },
+  },
+  23293: {
+    Vigil: {
+      address: "0x68B1D87F95878fE05B998F19b66F4baba5De1aed",
+      abi: [
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              indexed: false,
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+          ],
+          name: "SecretCreated",
+          type: "event",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          name: "_lastSeen",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          name: "_metas",
+          outputs: [
+            {
+              internalType: "address",
+              name: "creator",
+              type: "address",
+            },
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "longevity",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "string",
+              name: "name",
+              type: "string",
+            },
+            {
+              internalType: "uint256",
+              name: "longevity",
+              type: "uint256",
+            },
+            {
+              internalType: "bytes",
+              name: "secret",
+              type: "bytes",
+            },
+          ],
+          name: "createSecret",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
+              name: "owner",
+              type: "address",
+            },
+          ],
+          name: "getLastSeen",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "offset",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "count",
+              type: "uint256",
+            },
+          ],
+          name: "getMetas",
+          outputs: [
+            {
+              components: [
+                {
+                  internalType: "address",
+                  name: "creator",
+                  type: "address",
+                },
+                {
+                  internalType: "string",
+                  name: "name",
+                  type: "string",
+                },
+                {
+                  internalType: "uint256",
+                  name: "longevity",
+                  type: "uint256",
+                },
+              ],
+              internalType: "struct Vigil.SecretMetadata[]",
+              name: "",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "refreshSecrets",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "index",
+              type: "uint256",
+            },
+          ],
+          name: "revealSecret",
+          outputs: [
+            {
+              internalType: "bytes",
+              name: "",
+              type: "bytes",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
         },
       ],
       inheritedFunctions: {},

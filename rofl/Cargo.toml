@@ -7,9 +7,14 @@ edition = "2024"
 # Oasis SDK.
 oasis-runtime-sdk = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "runtime-sdk/v0.14.0" }
 module-evm = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "runtime-sdk/v0.14.0", package = "oasis-runtime-sdk-evm" }
-rofl-utils = { git = "https://github.com/oasisprotocol/oasis-sdk", tag = "rofl-utils/v0.1.1" }
 
 async-trait = "0.1.77"
-reqwest = "0.12.18"
+# reqwest = "0.12.18"
 tokio = { version = "1.45.1", features = ["full"] }
 ethabi = "18.0.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.140"
+reqwest = { version = "0.12.18", default-features = false, features = ["json"] }
+hex = "0.4"
+# primitive-types = "0.13.1"
+anyhow = "1.0.98"
