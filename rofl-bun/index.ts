@@ -1,38 +1,96 @@
-// Install ethers via: bun add ether
-import { ethers } from "ethers";
+import { Result, ok, err } from 'neverthrow';
+import type { Vault } from './types/contracts';
+import { provider } from './config';
+import { getProposalsByStatus, consumeProposal, ProposalState } from './vault';
+import duckdb from 'duckdb';
 
-// // Replace with your own WebSocket endpoint (e.g. Infura, Alchemy, QuickNode, etc.)
-// const WEBSOCKET_RPC = "wss://mainnet.infura.io/ws/v3/YOUR_INFURA_PROJECT_ID";
+const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | undefined, Error>> => {
+    const status = ProposalState.Approved;
+    const result = await getProposalsByStatus(status);
 
-// // Create a WebSocket provider
-// const provider = new ethers.providers.WebSocketProvider(WEBSOCKET_RPC);
+    if (result.isErr()) {
+        return err(result.error);
+    }
+    if (result.value.length === 0) {
+        return ok(undefined);
+    }
 
-// provider.on("block", async (blockNumber) => {
-//   try {
-//     console.log(`📬 New block received: ${blockNumber}`);
+    return ok(result.value[0]!);
+}
 
-//     // (Optional) Fetch full block data if you need more than just the number
-//     const block = await provider.getBlock(blockNumber);
-//     console.log({
-//       hash: block.hash,
-//       timestamp: new Date(block.timestamp * 1000).toISOString(),
-//       miner: block.miner,
-//       transactionCount: block.transactions.length,
-//     });
-//     console.log("––––––––––––––––––––––––––––––––––––––");
-//   } catch (err) {
-//     console.error("Error fetching block data:", err);
-//   }
-// });
+const executeQueryProposal = async (proposal: Vault.QueryProposalStruct): Promise<Result<string, Error>> => {
+    const db = new duckdb.Database(':memory:');
+    let result = "";
 
-// provider._websocket.on("error", (err) => {
-//   console.error("WebSocket Error:", err);
-// });
+    // MOCK
+    db.run("CREATE TABLE Bas (id INT, name TEXT)");
+    db.run("INSERT INTO Bas VALUES (1, 'test')");
+    db.run("CREATE TABLE mauro (id INT, name TEXT)");
+    db.run("INSERT INTO mauro VALUES (1, 'test')");
+    db.run("CREATE TABLE merlijn (id INT, name TEXT)");
+    db.run("INSERT INTO merlijn VALUES (1, 'test')");
 
-// provider._websocket.on("close", (code) => {
-//   console.warn(`WebSocket closed (code: ${code}), attempting to reconnect in 3s…`);
-//   setTimeout(() => provider._websocket.connect(), 3000);
-// });
 
-// Keep the process alive
-console.log("⛓️  Listening for new Ethereum blocks…");
+    db.all(proposal.sqlQuery, (err, rows) => {
+        if (err) {
+            result = err.message;
+        }
+        result = rows.join('\n');
+    });
+    db.close();
+
+    return ok(result);
+}
+
+const proposalFlow = async () => {
+    const result = await scanForProposals();
+
+    if (result.isErr()) {
+        console.error(`Error scanning for proposals:`, result.error);
+        return;
+    }
+    if (result.value == undefined) {
+        console.log(`No proposals found at status ${ProposalState.Approved}`);
+        return;
+    }
+    console.log(`Proposal ID at status ${ProposalState.Approved}: ${result.value.id}`);
+    const executeResult = await executeQueryProposal(result.value);
+
+    if (executeResult.isErr()) {
+        console.error(`Error executing proposal:`, executeResult.error);
+        return;
+    }
+    console.log(`Proposal executed: ${executeResult.value}`);
+
+    // const consumeResult = await consumeProposal(result.value.id, executeResult.value);
+
+    // if (consumeResult.isErr()) {
+    //     console.error(`Error consuming proposal:`, consumeResult.error);
+    // }
+};
+
+const uploadFlow = async () => {
+
+};
+
+provider.on("block", async (blockNumber) => {
+    console.log(`📬 New block received: ${blockNumber}`);
+
+    proposalFlow();
+    uploadFlow();
+});
+
+// Set up initial error handling
+provider.on("error", (error) => {
+    console.error("Provider error:", error);
+});
+
+// Prevent the Node.js process from exiting
+process.stdin.resume();
+
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+    console.log('Shutting down...');
+    provider.destroy();
+    process.exit(0);
+});

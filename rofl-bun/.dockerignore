@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Node.js / Bun
+node_modules
+npm-debug.log
+bun-debug.log
+
+# Build artifacts
+dist
+build
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
