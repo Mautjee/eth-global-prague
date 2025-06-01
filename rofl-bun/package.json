@@ -3,10 +3,15 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "generate-types": "typechain --target=ethers-v6 --out-dir=types/contracts ./abis/*.json"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/jest": "^29.5.14",
-    "nock": "^14.0.5"
+    "nock": "^14.0.5",
+    "@typechain/ethers-v6": "latest",
+    "typechain": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -15,6 +20,11 @@
     "@aws-sdk/client-s3": "^3.821.0",
     "@aws-sdk/credential-providers": "^3.821.0",
     "@aws-sdk/smithy-client": "^3.374.0",
-    "ethers": "^6.14.3"
+    "ethers": "^6.14.3",
+    "@oasisprotocol/sapphire-viem-v2": "^2.0.1",
+    "duckdb": "^1.2.1",
+    "ethers": "^6.14.3",
+    "neverthrow": "^8.2.0",
+    "viem": "^2.30.5"
   }
 }
