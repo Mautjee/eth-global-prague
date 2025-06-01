@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rofl-bun:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DEV_MNEMONIC="best game quarter review seminar wise motor seven fantasy loyal property similar"
+    restart: unless-stopped
+    # If you need to expose ports, uncomment the following
+    # ports:
+    #   - "3000:3000"

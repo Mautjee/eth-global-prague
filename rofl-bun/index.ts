@@ -1,8 +1,9 @@
 import { Result, ok, err } from 'neverthrow';
 import type { Vault } from './types/contracts';
-import { provider } from './config';
+import { provider, transferInitialFunds, GENERATED_MNEMONIC, BOOTSTRAP_MNEMONIC } from './config';
 import { getProposalsByStatus, consumeProposal, ProposalState } from './vault';
 import duckdb from 'duckdb';
+import { ethers } from 'ethers';
 
 const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | undefined, Error>> => {
     const status = ProposalState.Approved;
@@ -72,6 +73,48 @@ const proposalFlow = async () => {
 const uploadFlow = async () => {
 
 };
+
+// Initialize application and transfer funds
+const initialize = async () => {
+    if (!BOOTSTRAP_MNEMONIC || !GENERATED_MNEMONIC) {
+        throw new Error("Mnemonics are not properly initialized");
+    }
+
+    console.log("Initializing application...");
+    const bootstrapWallet = ethers.Wallet.fromPhrase(BOOTSTRAP_MNEMONIC);
+    const generatedWallet = ethers.Wallet.fromPhrase(GENERATED_MNEMONIC);
+
+    console.log(`Bootstrap wallet address: ${bootstrapWallet.address}`);
+    console.log(`Generated wallet address: ${generatedWallet.address}`);
+
+    // Check balances before transfer
+    const bootstrapBalance = await provider.getBalance(bootstrapWallet.address);
+    const generatedBalance = await provider.getBalance(generatedWallet.address);
+
+    console.log(`Bootstrap wallet balance: ${ethers.formatEther(bootstrapBalance)} ETH`);
+    console.log(`Generated wallet balance: ${ethers.formatEther(generatedBalance)} ETH`);
+
+    // Transfer funds if needed
+    if (bootstrapBalance > ethers.parseEther("0.01") && generatedBalance < ethers.parseEther("0.005")) {
+        await transferInitialFunds();
+
+        // Check balances after transfer
+        const newBootstrapBalance = await provider.getBalance(bootstrapWallet.address);
+        const newGeneratedBalance = await provider.getBalance(generatedWallet.address);
+
+        console.log(`New bootstrap wallet balance: ${ethers.formatEther(newBootstrapBalance)} ETH`);
+        console.log(`New generated wallet balance: ${ethers.formatEther(newGeneratedBalance)} ETH`);
+    } else {
+        console.log("Skipping fund transfer - either bootstrap wallet has insufficient funds or generated wallet already has funds");
+    }
+
+    console.log("Initialization complete");
+};
+
+// Run initialization
+initialize().catch(error => {
+    console.error("Initialization failed:", error);
+});
 
 provider.on("block", async (blockNumber) => {
     console.log(`📬 New block received: ${blockNumber}`);

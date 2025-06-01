@@ -1,0 +1,30 @@
+########################  Build stage  ################################
+FROM --platform=$BUILDPLATFORM node:20-bookworm AS build
+
+# tools needed to compile native addons
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential python3 python-is-python3 cmake git
+
+# enable yarn
+RUN corepack enable && corepack prepare yarn@stable --activate
+
+WORKDIR /app
+
+# install JS deps first (better cache hit-rate)
+COPY package.json ./
+ENV npm_config_build_from_source=duckdb \
+    npm_config_force_process_config=1
+RUN yarn install
+
+# copy the rest of the source
+COPY . .
+RUN yarn run generate-types
+
+########################  Runtime stage  ##############################
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+COPY --from=build /app /app
+
+ENV NODE_ENV=production
+CMD ["yarn","run","start"]
