@@ -1,7 +1,7 @@
 import * as chains from "viem/chains";
 
 export const sapphireTestnet = {
-  id: 0x5aff,
+  id: 23295,
   name: "Sapphire Testnet",
   network: "sapphire-testnet",
   nativeCurrency: {
