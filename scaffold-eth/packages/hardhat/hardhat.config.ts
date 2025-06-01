@@ -11,7 +11,7 @@ import "hardhat-deploy";
 import "hardhat-deploy-ethers";
 import { task } from "hardhat/config";
 import generateTsAbis from "./scripts/generateTsAbis";
-import "./tasks";
+import "./tasks/master.ts";
 
 // Custom task to print all configured account addresses
 task("accounts", "Prints the list of addresses configured for the current network").setAction(async (taskArgs, hre) => {
