@@ -1,16 +1,20 @@
 import { task } from "hardhat/config";
+import "./vault";
 
 // Global variable to store the latest deployed address
 let lastDeployedAddress: string;
 
 task("deploy").setAction(async (_args, hre) => {
-  const Vigil = await hre.ethers.getContractFactory("Vigil");
-  const vigil = await Vigil.deploy();
-  const vigilAddr = await vigil.waitForDeployment();
-  
+  // Use hardhat-deploy to deploy the contract
+  const deployResult = await hre.deployments.deploy("Vigil", {
+    from: (await hre.getNamedAccounts()).deployer,
+    args: [],
+    log: true,
+    autoMine: true,
+  });
+
   // Store address in the global variable
-  lastDeployedAddress = vigilAddr.target as string;
-  
+  lastDeployedAddress = deployResult.address;
   console.log(`Vigil address: ${lastDeployedAddress}`);
   return lastDeployedAddress;
 });
@@ -56,4 +60,3 @@ task("full-vigil").setAction(async (_args, hre) => {
   await hre.run("create-secret", { address });
   await hre.run("check-secret", { address });
 });
-
