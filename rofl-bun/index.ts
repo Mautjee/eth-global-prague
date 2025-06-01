@@ -1,9 +1,11 @@
-import { Result, ok, err } from 'neverthrow';
+import { Result, err, ok } from 'neverthrow';
 import type { Vault } from './types/contracts';
-import { provider, transferInitialFunds, GENERATED_MNEMONIC, BOOTSTRAP_MNEMONIC } from './config';
+import { provider, transferInitialFunds, GENERATED_MNEMONIC, BOOTSTRAP_MNEMONIC, bucketName } from './config';
 import { getProposalsByStatus, consumeProposal, ProposalState } from './vault';
 import duckdb from 'duckdb';
 import { ethers } from 'ethers';
+import { AkaveClient } from './adapters';
+import fs from 'fs';
 
 const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | undefined, Error>> => {
     const status = ProposalState.Approved;
@@ -19,28 +21,110 @@ const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | un
     return ok(result.value[0]!);
 }
 
-const executeQueryProposal = async (proposal: Vault.QueryProposalStruct): Promise<Result<string, Error>> => {
+export const executeQueryProposal = async (proposal: Vault.QueryProposalStruct): Promise<Result<string, Error>> => {
     const db = new duckdb.Database(':memory:');
-    let result = "";
 
-    // MOCK
-    db.run("CREATE TABLE Bas (id INT, name TEXT)");
-    db.run("INSERT INTO Bas VALUES (1, 'test')");
-    db.run("CREATE TABLE mauro (id INT, name TEXT)");
-    db.run("INSERT INTO mauro VALUES (1, 'test')");
-    db.run("CREATE TABLE merlijn (id INT, name TEXT)");
-    db.run("INSERT INTO merlijn VALUES (1, 'test')");
+    try {
+        console.log('Starting query proposal execution...');
 
+        const client = new AkaveClient(
+            process.env.AKAVE_ENDPOINT || '',
+            process.env.AKAVE_ACCESS_KEY || '',
+            process.env.AKAVE_SECRET_KEY || '',
+            process.env.AKAVE_REGION || ''
+        );
 
-    db.all(proposal.sqlQuery, (err, rows) => {
-        if (err) {
-            result = err.message;
+        // Check if bucket exists, create if it doesn't
+        console.log(`Checking if bucket ${bucketName} exists...`);
+        const bucketExists = await client.headBucket(bucketName);
+        if (!bucketExists) {
+            console.log(`Bucket ${bucketName} does not exist, creating it...`);
+            await client.createBucket(bucketName);
+            console.log(`Bucket ${bucketName} created successfully.`);
+        } else {
+            console.log(`Bucket ${bucketName} already exists.`);
         }
-        result = rows.join('\n');
-    });
-    db.close();
 
-    return ok(result);
+        // Get all objects in this bucket (.parquet files)
+        console.log(`Listing objects in bucket ${bucketName}...`);
+        const objects = await client.listObjects(bucketName);
+
+        // Check if objects are empty
+        if (objects.contents.length === 0) {
+            return err(new Error(`No objects found in bucket ${bucketName}`));
+        }
+
+        console.log(`Found ${objects.contents.length} objects in bucket:`);
+        for (const obj of objects.contents) {
+            console.log(`- ${obj.key} (${obj.size} bytes)`);
+        }
+
+        // Loop through objects and load them into duckdb
+        console.log('Loading parquet files into DuckDB...');
+
+        for (const object of objects.contents) {
+            // Skip non-parquet files
+            if (!object.key.toLowerCase().endsWith('.parquet')) {
+                console.log(`Skipping non-parquet file: ${object.key}`);
+                continue;
+            }
+
+            console.log(`Downloading object: ${object.key}`);
+            // Get the object
+            const objectContent = await client.getObject(bucketName, object.key);
+
+            // Create a temporary file to store the parquet data
+            const tempFilePath = `./${object.key}`;
+            console.log(`Writing object to temporary file: ${tempFilePath}`);
+            fs.writeFileSync(tempFilePath, Buffer.from(objectContent));
+
+            // Create a table name from the object key (remove extension and sanitize)
+            const tableName = object.key.replace('.parquet', '').replace(/[^a-zA-Z0-9_]/g, '_');
+
+            // Load the parquet file into DuckDB
+            console.log(`Creating table ${tableName} from parquet file`);
+            await new Promise<void>((resolve, reject) => {
+                db.run(`CREATE TABLE ${tableName} AS SELECT * FROM read_parquet('${tempFilePath}')`, (err) => {
+                    if (err) {
+                        console.error(`Error creating table from parquet: ${err.message}`);
+                        reject(err);
+                    } else {
+                        console.log(`Table ${tableName} created successfully.`);
+                        resolve();
+                    }
+                });
+            });
+
+            // Clean up the temporary file
+            fs.unlinkSync(tempFilePath);
+        }
+
+        // Run the SQL query from the proposal
+        console.log(`Executing SQL query: ${proposal.sqlQuery}`);
+        const rows = await new Promise<any[]>((resolve, reject) => {
+            db.all(proposal.sqlQuery, (err, rows) => {
+                if (err) {
+                    console.error(`Error executing query: ${err.message}`);
+                    reject(err);
+                } else {
+                    console.log(`Query executed successfully, got ${rows.length} rows.`);
+                    resolve(rows);
+                }
+            });
+        });
+
+        // Format the result
+        const result = rows.join('\n');
+        console.log('Query execution completed successfully.');
+        return ok(result);
+    } catch (error) {
+        console.error(`Error in executeQueryProposal: ${error instanceof Error ? error.message : String(error)}`);
+        return err(error instanceof Error ? error : new Error(String(error)));
+    } finally {
+        // Always close the database
+        console.log('Closing DuckDB connection...');
+        db.close();
+    }
 }
 
 const proposalFlow = async () => {
@@ -71,7 +155,9 @@ const proposalFlow = async () => {
 };
 
 const uploadFlow = async () => {
+    //call maken naar dao
 
+    //
 };
 
 // Initialize application and transfer funds
