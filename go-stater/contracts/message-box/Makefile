@@ -4,7 +4,7 @@ include ../../common.mk
 
 .PHONY: MessageBox clean
 
-MessageBox:
+Vigil:
 	@printf "$(CYAN)*** Compiling $(BLUE)$@$(CYAN)...$(OFF)\n"
 	@solc --evm-version paris --bin --abi --optimize --overwrite -o . $@.sol
 	@mv $@.bin $@.hex

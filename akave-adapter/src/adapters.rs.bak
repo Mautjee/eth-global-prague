@@ -1,0 +1,522 @@
+use anyhow::{Result, anyhow};
+use reqwest::{Client, header};
+use serde::{Deserialize, Serialize};
+use sha2::{Sha256, Digest, digest::FixedOutput};
+use base64::{Engine as _, engine::general_purpose};
+use hmac::{Hmac, Mac};
+use chrono::{DateTime, Utc};
+use hex;
+use url::Url;
+use std::collections::HashMap;
+use std::time::SystemTime;
+
+#[cfg(test)]
+use tokio;
+
+#[derive(Debug, Clone)]
+pub struct AkaveClient {
+    client: Client,
+    endpoint: String,
+    access_key: String,
+    secret_key: String,
+    region: String,
+    service: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Bucket {
+    pub name: String,
+    pub creation_date: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ListBucketsOutput {
+    pub buckets: Vec<Bucket>,
+    pub owner: Owner,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Owner {
+    pub display_name: String,
+    pub id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Object {
+    pub key: String,
+    pub last_modified: String,
+    pub etag: String,
+    pub size: u64,
+    pub storage_class: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ListObjectsOutput {
+    pub contents: Vec<Object>,
+    pub name: String,
+    pub prefix: String,
+    pub delimiter: Option<String>,
+    pub max_keys: i32,
+    pub is_truncated: bool,
+}
+
+impl AkaveClient {
+    // Constructor for AkaveClient
+    pub fn new(endpoint: &str, access_key: &str, secret_key: &str) -> Self {
+        Self {
+            client: Client::new(),
+            endpoint: endpoint.to_string(),
+            access_key: access_key.to_string(),
+            secret_key: secret_key.to_string(),
+            region: "global".to_string(), // Default region for Akave O3
+            service: "s3".to_string(),    // S3-compatible service
+        }
+    }
+    
+    // Constructor with region and service options
+    pub fn new_with_options(endpoint: &str, access_key: &str, secret_key: &str, region: &str, service: &str) -> Self {
+        Self {
+            client: Client::new(),
+            endpoint: endpoint.to_string(),
+            access_key: access_key.to_string(),
+            secret_key: secret_key.to_string(),
+            region: region.to_string(),
+            service: service.to_string(),
+        }
+    }
+
+    // Bucket operations
+    pub async fn create_bucket(&self, bucket_name: &str) -> Result<()> {
+        let url = format!("{}/{}", self.endpoint, bucket_name);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("PUT", &url, bucket_name, "", "", &date_only, &datetime, "");
+        
+        let mut request = self.client.put(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to create bucket: {} - {}", response.status(), error_text))
+        }
+    }
+
+    pub async fn delete_bucket(&self, bucket_name: &str) -> Result<()> {
+        let url = format!("{}/{}", self.endpoint, bucket_name);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("DELETE", &url, bucket_name, "", "", &date_only, &datetime, "");
+        
+        let mut request = self.client.delete(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to delete bucket: {} - {}", response.status(), error_text))
+        }
+    }
+
+    pub async fn head_bucket(&self, bucket_name: &str) -> Result<bool> {
+        let url = format!("{}/{}", self.endpoint, bucket_name);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("HEAD", &url, bucket_name, "", "", &date_only, &datetime, "");
+        
+        let mut request = self.client.head(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        Ok(response.status().is_success())
+    }
+
+    pub async fn list_buckets(&self) -> Result<ListBucketsOutput> {
+        let url = self.endpoint.clone();
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("GET", &url, "", "", "", &date_only, &datetime, "");
+        
+        let mut request = self.client.get(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            let output = response.json::<ListBucketsOutput>().await?;
+            Ok(output)
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to list buckets: {} - {}", response.status(), error_text))
+        }
+    }
+
+    // Object operations
+    pub async fn put_object(&self, bucket_name: &str, key: &str, content: Vec<u8>) -> Result<()> {
+        let url = format!("{}/{}/{}", self.endpoint, bucket_name, key);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        // Create content hash (SHA-256)
+        let mut hasher = Sha256::new();
+        hasher.update(&content);
+        let content_sha256 = hex::encode(hasher.finalize_fixed());
+        
+        let content_type = "application/octet-stream";
+        
+        let headers = self.sign_request("PUT", &url, bucket_name, key, &content_sha256, &date_only, &datetime, content_type);
+        
+        let mut request = self.client.put(&url)
+            .header(header::CONTENT_TYPE, content_type)
+            .body(content);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to put object: {} - {}", response.status(), error_text))
+        }
+    }
+
+    pub async fn get_object(&self, bucket_name: &str, key: &str) -> Result<Vec<u8>> {
+        let url = format!("{}/{}/{}", self.endpoint, bucket_name, key);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("GET", &url, bucket_name, key, "", &date_only, &datetime, "");
+        
+        let mut request = self.client.get(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            let bytes = response.bytes().await?;
+            Ok(bytes.to_vec())
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to get object: {} - {}", response.status(), error_text))
+        }
+    }
+
+    pub async fn delete_object(&self, bucket_name: &str, key: &str) -> Result<()> {
+        let url = format!("{}/{}/{}", self.endpoint, bucket_name, key);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("DELETE", &url, bucket_name, key, "", &date_only, &datetime, "");
+        
+        let mut request = self.client.delete(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow!("Failed to delete object: {} - {}", response.status(), error_text))
+        }
+    }
+
+    pub async fn head_object(&self, bucket_name: &str, key: &str) -> Result<bool> {
+        let url = format!("{}/{}/{}", self.endpoint, bucket_name, key);
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        let headers = self.sign_request("HEAD", &url, bucket_name, key, "", &date_only, &datetime, "");
+        
+        let mut request = self.client.head(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        Ok(response.status().is_success())
+    }
+
+    pub async fn list_objects(&self, bucket_name: &str, prefix: Option<&str>) -> Result<ListObjectsOutput> {
+        let mut url = format!("{}/{}", self.endpoint, bucket_name);
+        let mut query_string = "";
+        
+        if let Some(prefix_value) = prefix {
+            query_string = format!("prefix={}", prefix_value);
+            url = format!("{}?{}", url, query_string);
+        }
+        
+        let date = Utc::now();
+        let datetime = date.format("%Y%m%dT%H%M%SZ").to_string();
+        let date_only = date.format("%Y%m%d").to_string();
+        
+        // Include query parameters in canonical request but not in URL for signing
+        let resource_path = if !query_string.is_empty() {
+            format!("{}", bucket_name)
+        } else {
+            bucket_name.to_string()
+        };
+        
+        let headers = self.sign_request("GET", &url, &resource_path, "", "", &date_only, &datetime, "");
+        
+        let mut request = self.client.get(&url);
+        
+        // Add all authorization headers
+        for (key, value) in headers {
+            request = request.header(key, value);
+        }
+        
+        let response = request.send().await?;
+
+        if response.status().is_success() {
+            let output = response.json::<ListObjectsOutput>().await?;
+            Ok(output)
+        } else {
+    async fn test_create_bucket_success() {
+        // Create test data
+        let bucket_name = "test-bucket";
+        
+        // Request a new server from the pool
+        let mut server = mockito::Server::new_async().await;
+        
+        // Print the expected URL for debugging
+        let expected_url = format!("/{}", bucket_name);
+        println!("🧪 Expected URL: {}", expected_url);
+        
+        // Create a mock for the PUT request to create a bucket
+        let mock = server.mock("PUT", expected_url.as_str())
+            .with_status(200)
+            .create_async()
+            .await;
+        
+        // Create the AkaveClient with the server URL
+        let server_url = server.url();
+        let client = super::AkaveClient::new(
+            &server_url,
+            "test_access_key",
+            "test_secret_key"
+        );
+        
+        // Call the create_bucket method
+        let full_url = format!("{}/{}", server_url, bucket_name);
+        println!("🧪 Sending request to: {}", full_url);
+        
+        let result = client.create_bucket(bucket_name).await;
+        
+        // Print the result for debugging
+        println!("🧪 Result: {:#?}", result);
+        
+        // Print mock information for debugging
+        println!("🧪 Mock expectations: {:#?}", mock.matched());
+        
+        // Verify the result is successful
+        assert!(result.is_ok(), "result was not successful: {:#?}", result);
+        
+        // Verify that the mock was called
+        println!("🧪 Verifying mock expectations...");
+        mock.assert_async().await;
+        println!("✅ Mock assertions passed");
+    }
+    
+    #[tokio::test]
+    async fn test_put_object_success() {
+        // Create test data
+        let bucket_name = "test-bucket";
+        let object_key = "test-key";
+        let test_data = vec![0; 1024];
+        
+        // Request a new server from the pool
+        let mut server = mockito::Server::new_async().await;
+        
+        // Print the expected URL for debugging
+        let expected_url = format!("/{}/{}", bucket_name, object_key);
+        println!("🧪 Expected URL: {}", expected_url);
+        
+        // Create a mock for the PUT request to upload an object
+        // Note: We're using a simpler matcher for the authorization header
+        // since mockito's match_header doesn't support closures
+        let mock = server.mock("PUT", expected_url.as_str())
+            .with_status(200)
+            .with_header("content-type", "application/octet-stream")
+            .with_body(test_data.clone())
+            .create_async()
+            .await;
+        
+        // Create the AkaveClient with the server URL
+        let server_url = server.url();
+        let client = super::AkaveClient::new(
+            &server_url,
+            "test_access_key",
+            "test_secret_key"
+        );
+        
+        // Call the put_object method
+        let full_url = format!("{}/{}/{}", server_url, bucket_name, object_key);
+        println!("🧪 Sending request to: {}", full_url);
+        
+        let result = client.put_object(bucket_name, object_key, test_data).await;
+        
+        // Print the result for debugging
+        println!("🧪 Result: {:#?}", result);
+        
+        // Print mock information for debugging
+        println!("🧪 Mock expectations: {:#?}", mock.matched());
+        
+        // Verify the result is successful
+        assert!(result.is_ok(), "result was not successful: {:#?}", result);
+        
+        // Verify that the mock was called
+        println!("🧪 Verifying mock expectations...");
+        mock.assert_async().await;
+        println!("✅ Mock assertions passed");
+    }
+}
+
+#[cfg(test)]
+mod integration_tests {
+    use super::*;
+    use std::env;
+    use dotenv::dotenv;
+    
+    // This test requires real Akave credentials stored in .env file
+    // Run with: cargo test -- integration_tests::test_put_get_object_integration --ignored
+    #[tokio::test]
+    #[ignore] // Ignore by default since it requires real credentials
+    async fn test_put_get_object_integration() {
+        // Load .env file if present
+        dotenv().ok();
+        
+        // 1. Read credentials from environment variables
+        let endpoint = env::var("AKAVE_ENDPOINT")
+            .expect("AKAVE_ENDPOINT must be set for integration tests");
+        let access_key = env::var("AKAVE_ACCESS_KEY")
+            .expect("AKAVE_ACCESS_KEY must be set for integration tests");
+        let secret_key = env::var("AKAVE_SECRET_KEY")
+            .expect("AKAVE_SECRET_KEY must be set for integration tests");
+        let bucket_name = env::var("AKAVE_TEST_BUCKET")
+            .expect("AKAVE_TEST_BUCKET must be set for integration tests");
+        
+        println!("🧪 Starting integration test with endpoint: {}", endpoint);
+        
+        // 2. Create the AkaveClient with real credentials
+        let client = AkaveClient::new(&endpoint, &access_key, &secret_key);
+        
+        // 3. Generate a unique object key to avoid conflicts
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let object_key = format!("test-object-{}", timestamp);
+        println!("🧪 Generated unique object key: {}", object_key);
+        
+        // 4. Create test data - something we can verify after retrieval
+        let test_data = format!("Hello, Akave! This is a test at {}", timestamp)
+            .into_bytes();
+        println!("🧪 Test data size: {} bytes", test_data.len());
+        
+        // 5. Create the bucket
+        println!("🧪 Creating bucket: {}", bucket_name);
+        let create_result = client.create_bucket(&bucket_name).await;
+        assert!(create_result.is_ok(), "Failed to create bucket: {:?}", create_result);
+        println!("✅ Bucket created successfully");
+        
+        // 6. Put the object
+        println!("🧪 Uploading object {}...", object_key);
+        let put_result = client.put_object(&bucket_name, &object_key, test_data.clone()).await;
+        assert!(put_result.is_ok(), "Failed to put object: {:?}", put_result);
+        println!("✅ Object uploaded successfully");
+        
+        // 7. Get the object
+        println!("🧪 Downloading object {}...", object_key);
+        let get_result = client.get_object(&bucket_name, &object_key).await;
+        assert!(get_result.is_ok(), "Failed to get object: {:?}", get_result);
+        let retrieved_data = get_result.unwrap();
+        println!("✅ Object downloaded successfully, size: {} bytes", retrieved_data.len());
+        
+        // 8. Verify the retrieved data matches what was uploaded
+        assert_eq!(retrieved_data, test_data, "Retrieved data doesn't match original data");
+        println!("✅ Object data verified correctly");
+        
+        // 9. Optional: List objects to verify the object appears in listings
+        println!("🧪 Listing objects in bucket...");
+        let list_result = client.list_objects(&bucket_name, Some("test-object")).await;
+        if let Ok(listing) = list_result {
+            let found = listing.contents.iter().any(|obj| obj.key == object_key);
+            assert!(found, "Uploaded object not found in listing");
+            println!("✅ Object found in bucket listing");
+            
+            // Print some details about the object from the listing
+            if let Some(obj) = listing.contents.iter().find(|o| o.key == object_key) {
+                println!("🔍 Object details from listing:");
+                println!("   Key: {}", obj.key);
+                println!("   Size: {} bytes", obj.size);
+                println!("   ETag: {}", obj.etag);
+                println!("   Last Modified: {}", obj.last_modified);
+            }
+        } else {
+            println!("⚠️ Could not list objects: {:?}", list_result.err().unwrap());
+            // Continue anyway, we might not have LIST permission
+        }
+        
+        // 10. Clean up - delete the test object
+        println!("🧹 Cleaning up - deleting test object...");
+        let delete_result = client.delete_object(&bucket_name, &object_key).await;
+        if let Err(e) = delete_result {
+            println!("⚠️ Could not delete object: {:?}", e);
+            // Don't fail the test on cleanup errors
+        } else {
+            println!("✅ Object deleted successfully");
+        }
+    }
+}

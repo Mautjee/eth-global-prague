@@ -2,21 +2,21 @@
 
 include ../common.mk
 
-.PHONY: all MessageBox clean
+.PHONY: all MessageBox Vigil clean
 
-all: MessageBox Virgil
+all: MessageBox
 	@printf "$(CYAN)*** Contracts built successfully!$(OFF)\n"
 
 MessageBox:
 	@printf "$(CYAN)*** Building contract: $(BLUE)MessageBox$(CYAN)...$(OFF)\n"
 	@$(MAKE) -C message-box
 
-Virgil:
-	@printf "$(CYAN)*** Building contract: $(BLUE)Virgil$(CYAN)...$(OFF)\n"
-	@$(MAKE) -C virgil
+Vigil:
+	@printf "$(CYAN)*** Building contract: $(BLUE)Vigil$(CYAN)...$(OFF)\n"
+	@$(MAKE) -C vigil
 	
 clean:
 	@printf "$(CYAN)*** Cleaning up...$(OFF)\n"
 	@$(MAKE) -C message-box clean
-	@$(MAKE) -C virgil clean
+	@$(MAKE) -C vigil clean
 
