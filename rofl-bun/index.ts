@@ -42,8 +42,7 @@ const executeQueryProposal = async (proposal: Vault.QueryProposalStruct): Promis
     return ok(result);
 }
 
-provider.on("block", async (blockNumber) => {
-    console.log(`📬 New block received: ${blockNumber}`);
+const proposalFlow = async () => {
     const result = await scanForProposals();
 
     if (result.isErr()) {
@@ -68,6 +67,17 @@ provider.on("block", async (blockNumber) => {
     // if (consumeResult.isErr()) {
     //     console.error(`Error consuming proposal:`, consumeResult.error);
     // }
+};
+
+const uploadFlow = async () => {
+
+};
+
+provider.on("block", async (blockNumber) => {
+    console.log(`📬 New block received: ${blockNumber}`);
+
+    proposalFlow();
+    uploadFlow();
 });
 
 // Set up initial error handling
