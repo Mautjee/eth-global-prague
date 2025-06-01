@@ -23,6 +23,7 @@ const generateUniqueName = (prefix: string) => {
   return `${prefix}-${timestamp}-${randomSuffix}`;
 };
 
+// Test suite for Akave adapter - integration tests (run with an actual Akave instance)
 describe('AkaveClient - Integration Tests', () => {
   // Using ! to tell TypeScript that client will be defined when used
   let client!: AkaveClient;
@@ -218,10 +219,10 @@ describe('AkaveClient - Integration Tests', () => {
           log(`⚠️ Cleanup error deleting object: ${err instanceof Error ? err.message : String(err)}`))
         
         // Then delete bucket
-        await client.deleteBucket(testBucketName).catch(err => 
-          log(`⚠️ Cleanup error deleting bucket: ${err instanceof Error ? err.message : String(err)}`))
-      } catch (err) {
-        log(`⚠️ Final cleanup error: ${err instanceof Error ? err.message : String(err)}`);
+      //   await client.deleteBucket(testBucketName).catch(err => 
+      //     log(`⚠️ Cleanup error deleting bucket: ${err instanceof Error ? err.message : String(err)}`))
+      // } catch (err) {
+      //   log(`⚠️ Final cleanup error: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
   });
@@ -426,11 +427,40 @@ describe('AkaveClient - Integration Tests', () => {
       log(`✅ deleteObject completed in ${Date.now() - deleteStartTime}ms`);
       log(`⏱️ deleteObject operation completed at ${new Date().toISOString()}`);
       
-      // Verify object no longer exists
+      // Add an additional delay before verification to ensure eventual consistency
+      const additionalConsistencyDelay = 3000; // 3 seconds
+      log(`⏱️ Test: Waiting ${additionalConsistencyDelay}ms for eventual consistency before verification...`);
+      await new Promise(resolve => setTimeout(resolve, additionalConsistencyDelay));
+      
+      // Verify object no longer exists with multiple attempts if needed
       log(`📋 Verifying object no longer exists...`);
       const verifyAfterStartTime = Date.now();
-      const existsAfter = await client.headObject(testBucketName, testObjectKey);
-      log(`✅ headObject after deletion completed in ${Date.now() - verifyAfterStartTime}ms`);
+      
+      // Try verification multiple times with increasing delays
+      let existsAfter = true;
+      const maxVerifyAttempts = 3;
+      
+      for (let verifyAttempt = 1; verifyAttempt <= maxVerifyAttempts; verifyAttempt++) {
+        log(`📋 Verification attempt ${verifyAttempt}/${maxVerifyAttempts}...`);
+        existsAfter = await client.headObject(testBucketName, testObjectKey);
+        
+        if (!existsAfter) {
+          // Success - object is gone
+          log(`✅ Object confirmed deleted on verification attempt ${verifyAttempt}`);
+          break;
+        } else if (verifyAttempt < maxVerifyAttempts) {
+          // Object still exists, wait and retry
+          const verifyDelay = 2000 * verifyAttempt; // Increasing delay for each attempt
+          log(`⏱️ Object still exists, waiting ${verifyDelay}ms before next verification attempt...`);
+          await new Promise(resolve => setTimeout(resolve, verifyDelay));
+        }
+      }
+      
+      log(`✅ headObject verification completed in ${Date.now() - verifyAfterStartTime}ms`);
+      // Custom message for more descriptive failures
+      if (existsAfter) {
+        log(`⚠️ Object still exists after ${maxVerifyAttempts} verification attempts!`);
+      }
       expect(existsAfter).toBe(false);
       log(`📊 Object exists after deletion: ${existsAfter}`);
     } finally {

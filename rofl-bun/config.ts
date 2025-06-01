@@ -40,3 +40,5 @@ const wallet = ethers.Wallet.fromPhrase(DEV_MNEMONIC, provider);
 
 // Create a contract instance with signer for write operations
 export let vaultContractWithSigner: Vault = vaultContract.connect(wallet);
+
+export const bucketName = "BaMaMe-Bucket";
