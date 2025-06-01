@@ -1,80 +1,133 @@
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { Vault } from "../typechain-types";
+import { Vault, VaultToken, VaultGovernor, VaultTimelock } from "../typechain-types";
 
-// Global variable to store the latest deployed address
-let lastDeployedAddress: string;
+// Global variables to store the latest deployed addresses
+let lastDeployedAddresses: {
+  vault: string;
+  token: string;
+  governor: string;
+  timelock: string;
+};
 
-task("deploy-vault").setAction(async (_args, hre) => {
+task("deploy-vault", "Deploy the Vault contract with governance").setAction(async (_args, hre) => {
+  const { deploy } = hre.deployments;
+  const [deployer] = await hre.ethers.getSigners();
   const appId = "0x123456789012345678901234567890123456789012";
-  console.log("Length:", appId.length); // Should be 44
-  console.log("Bytes:", (appId.length - 2) / 2); // Should be 21
 
-  // Use hardhat-deploy to deploy the contract
-  const deployResult = await hre.deployments.deploy("Vault", {
-    from: (await hre.getNamedAccounts()).deployer,
-    args: [appId],
+  console.log("Deploying VaultToken...");
+  const token = await deploy("VaultToken", {
+    from: deployer.address,
+    args: [deployer.address],
     log: true,
     autoMine: true,
-    gasLimit: 3000000,
   });
+  console.log("VaultToken deployed to:", token.address);
 
-  // Store address in the global variable
-  lastDeployedAddress = deployResult.address;
-  console.log(`Vault address: ${lastDeployedAddress}`);
-  return lastDeployedAddress;
+  console.log("\nDeploying VaultTimelock...");
+  const timelock = await deploy("VaultTimelock", {
+    from: deployer.address,
+    args: [
+      60, // 1 minute min delay
+      [deployer.address], // proposers
+      [deployer.address], // executors
+      deployer.address, // admin
+    ],
+    log: true,
+    autoMine: true,
+  });
+  console.log("VaultTimelock deployed to:", timelock.address);
+
+  console.log("\nDeploying VaultGovernor...");
+  const governor = await deploy("VaultGovernor", {
+    from: deployer.address,
+    args: [token.address, timelock.address, deployer.address],
+    log: true,
+    autoMine: true,
+  });
+  console.log("VaultGovernor deployed to:", governor.address);
+
+  console.log("\nDeploying Vault...");
+  const vault = await deploy("Vault", {
+    from: deployer.address,
+    args: [appId, governor.address],
+    log: true,
+    autoMine: true,
+    gasLimit: 5000000,
+  });
+  console.log("Vault deployed to:", vault.address);
+
+  // Store addresses
+  lastDeployedAddresses = {
+    vault: vault.address,
+    token: token.address,
+    governor: governor.address,
+    timelock: timelock.address,
+  };
+
+  return lastDeployedAddresses;
 });
 
-task("test-vault", "Test the Vault contract functionality").setAction(
-  async (taskArgs, hre: HardhatRuntimeEnvironment) => {
+task("test-vault", "Test the Vault contract with governance functionality").setAction(
+  async (_args, hre: HardhatRuntimeEnvironment) => {
     console.log("Compiling contracts...");
     await hre.run("compile");
 
-    console.log("\nDeploying Vault contract...");
-    const { deploy } = hre.deployments;
+    console.log("\nDeploying contracts...");
+    const addresses = await hre.run("deploy-vault");
     const [deployer] = await hre.ethers.getSigners();
-    const appId = "0x123456789012345678901234567890123456789012";
 
-    const vault = await deploy("Vault", {
-      from: deployer.address,
-      args: [appId],
-      log: true,
-      autoMine: true,
-      gasLimit: 3000000,
-    });
-    console.log("Vault deployed to:", vault.address);
-
-    const vaultContract = await hre.ethers.getContractAt("Vault", vault.address);
+    // Get contract instances
+    const vault = await hre.ethers.getContractAt("Vault", addresses.vault);
+    const token = await hre.ethers.getContractAt("VaultToken", addresses.token);
+    const governor = await hre.ethers.getContractAt("VaultGovernor", addresses.governor);
 
     console.log("\nTesting proposeQuery...");
-    const tx = await vaultContract.proposeQuery("SELECT * FROM users", "0x123");
+    const tx = await vault.proposeQuery("SELECT * FROM users", "0x123");
     const receipt = await tx.wait();
     const event = receipt?.logs[0];
     if (!event || !event.topics[1]) {
       throw new Error("Could not get proposal ID from event");
     }
     const proposalId = BigInt(event.topics[1]);
-
     console.log("Proposal submitted with ID:", proposalId.toString());
 
-    console.log("\nTesting approveProposal...");
-    const approveTx = await vaultContract.approveProposal(proposalId);
-    await approveTx.wait();
-    console.log("Proposal approved");
+    console.log("\nTesting createGovernanceProposal...");
+    const createGovTx = await vault.createGovernanceProposal(proposalId);
+    const createGovReceipt = await createGovTx.wait();
+    console.log("Governance proposal created");
+
+    // Get the governance proposal ID
+    const governanceProposalId = await vault.getGovernanceProposalId(proposalId);
+    console.log("Governance proposal ID:", governanceProposalId.toString());
+
+    // Add deployer as authorized voter
+    console.log("\nAdding deployer as authorized voter...");
+    await governor.addAuthorizedVoter(deployer.address);
+
+    // Cast vote
+    console.log("\nCasting vote...");
+    await governor.castVote(governanceProposalId, 1); // 1 = For
+
+    // Wait for voting period to end (in a real scenario)
+    console.log("\nWaiting for voting period to end...");
+    // Note: In a real test, you would need to advance time here
+
+    // Execute the proposal
+    console.log("\nExecuting proposal...");
+    const targets = [addresses.vault];
+    const values = [0];
+    const calldatas = [hre.ethers.AbiCoder.defaultAbiCoder().encode(["uint256"], [proposalId])];
+    await governor.execute(targets, values, calldatas, hre.ethers.keccak256(hre.ethers.toUtf8Bytes("")));
 
     console.log("\nTesting getApprovedProposals...");
-    const approvedProposals = await vaultContract.getApprovedProposals(0, 10);
+    const approvedProposals = await vault.getApprovedProposals(0, 10);
     console.log("Number of approved proposals:", approvedProposals.length);
 
     console.log("\nTesting consumeProposal...");
-    const consumeTx = await vaultContract.consumeProposal(proposalId, "encrypted_result_here");
+    const consumeTx = await vault.consumeProposal(proposalId, "encrypted_result_here");
     await consumeTx.wait();
     console.log("Proposal consumed");
-
-    console.log("\nTesting checkAndUpdateExpiredProposals...");
-    const checkTx = await vaultContract.checkAndUpdateExpiredProposals();
-    await checkTx.wait();
-    console.log("Expired proposals checked and updated");
 
     console.log("\nAll tests completed successfully!");
   },

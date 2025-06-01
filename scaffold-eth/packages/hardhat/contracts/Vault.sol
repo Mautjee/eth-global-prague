@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/governance/IGovernor.sol";
 
 contract Vault is ReentrancyGuard, Pausable, Ownable {
     enum ProposalStatus {
@@ -22,6 +23,7 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
         uint256 timestamp;
         uint256 expirationTime;
         ProposalStatus status;
+        uint256 governanceProposalId;
     }
 
     struct CompletedQuery {
@@ -36,12 +38,14 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
     uint256 private proposalCounter;
     bytes21 public appId;
     uint256 public defaultExpirationPeriod;
+    IGovernor public governor;
 
     // Mappings
     mapping(uint256 => QueryProposal) public proposals;
     mapping(ProposalStatus => uint256[]) public proposalsByStatus;
     mapping(address => uint256[]) public userProposals;
     mapping(uint256 => CompletedQuery) public completedQueries;
+    mapping(uint256 => bool) public governanceProposalsExecuted;
 
     // Events
     event ProposalSubmitted(uint256 indexed proposalId, address indexed requester, string sqlQuery);
@@ -50,12 +54,22 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
     event QueryCompleted(uint256 indexed proposalId, address indexed requester);
     event ProposalExpired(uint256 indexed proposalId);
     event ExpirationPeriodUpdated(uint256 newPeriod);
+    event GovernorUpdated(address indexed newGovernor);
+    event GovernanceProposalCreated(uint256 indexed vaultProposalId, uint256 indexed governanceProposalId);
 
-    constructor(bytes21 _appId) Ownable(msg.sender) {
+    constructor(bytes21 _appId, address _governor) Ownable(msg.sender) {
         require(_appId != bytes21(0), "AppId cannot be zero");
+        require(_governor != address(0), "Governor address cannot be zero");
         appId = _appId;
         defaultExpirationPeriod = 7 days;
-        proposalCounter = 0; // Explicitly initialize
+        proposalCounter = 0;
+        governor = IGovernor(_governor);
+    }
+
+    function setGovernor(address _governor) external onlyOwner {
+        require(_governor != address(0), "Governor address cannot be zero");
+        governor = IGovernor(_governor);
+        emit GovernorUpdated(_governor);
     }
 
     function proposeQuery(
@@ -76,7 +90,8 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
             publicKey: publicKey,
             timestamp: block.timestamp,
             expirationTime: block.timestamp + defaultExpirationPeriod,
-            status: ProposalStatus.Pending
+            status: ProposalStatus.Pending,
+            governanceProposalId: 0
         });
 
         proposals[proposalId] = newProposal;
@@ -87,18 +102,49 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
         return proposalId;
     }
 
-    function approveProposal(uint256 proposalId) external onlyOwner whenNotPaused nonReentrant {
+    function createGovernanceProposal(uint256 proposalId) external onlyOwner whenNotPaused nonReentrant {
+        QueryProposal storage proposal = proposals[proposalId];
+        require(proposal.id != 0, "Proposal does not exist");
+        require(proposal.status == ProposalStatus.Pending, "Proposal not pending");
+        require(proposal.governanceProposalId == 0, "Governance proposal already created");
+
+        address[] memory targets = new address[](1);
+        targets[0] = address(this);
+
+        uint256[] memory values = new uint256[](1);
+        values[0] = 0;
+
+        bytes[] memory calldatas = new bytes[](1);
+        calldatas[0] = abi.encodeWithSignature("approveProposal(uint256)", proposalId);
+
+        string memory description = string(abi.encodePacked(
+            "Approve query proposal #",
+            proposalId,
+            " with SQL: ",
+            proposal.sqlQuery
+        ));
+
+        uint256 governanceProposalId = governor.propose(targets, values, calldatas, description);
+        
+        proposal.governanceProposalId = governanceProposalId;
+        
+        emit GovernanceProposalCreated(proposalId, governanceProposalId);
+    }
+
+    function approveProposal(uint256 proposalId) external whenNotPaused nonReentrant {
         QueryProposal storage proposal = proposals[proposalId];
         require(proposal.id != 0, "Proposal does not exist");
         require(proposal.status == ProposalStatus.Pending, "Proposal not pending");
         require(block.timestamp < proposal.expirationTime, "Proposal expired");
+        require(proposal.governanceProposalId != 0, "No governance proposal exists");
+        require(msg.sender == address(governor), "Only governor can approve");
+        require(!governanceProposalsExecuted[proposal.governanceProposalId], "Proposal already executed");
 
         proposal.status = ProposalStatus.Approved;
+        governanceProposalsExecuted[proposal.governanceProposalId] = true;
 
-        // Remove from Pending array
         _removeFromStatusArray(ProposalStatus.Pending, proposalId);
 
-        // Add to Approved array
         proposalsByStatus[ProposalStatus.Approved].push(proposalId);
 
         emit ProposalApproved(proposalId, msg.sender);
@@ -111,10 +157,8 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
 
         proposal.status = ProposalStatus.Rejected;
 
-        // Remove from Pending array
         _removeFromStatusArray(ProposalStatus.Pending, proposalId);
 
-        // Add to Rejected array
         proposalsByStatus[ProposalStatus.Rejected].push(proposalId);
 
         emit ProposalRejected(proposalId, msg.sender);
@@ -123,7 +167,6 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
     function getApprovedProposals(uint256 offset, uint256 limit) external view returns (QueryProposal[] memory) {
         uint256[] storage approvedIds = proposalsByStatus[ProposalStatus.Approved];
 
-        // Handle edge cases
         if (offset >= approvedIds.length) {
             return new QueryProposal[](0);
         }
@@ -141,9 +184,6 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
     }
 
     function consumeProposal(uint256 proposalId, string calldata encryptedResult) external whenNotPaused nonReentrant {
-        // TODO: Implement ROFL authorization
-        // Subcall.roflEnsureAuthorizedOrigin(appId);
-
         QueryProposal storage proposal = proposals[proposalId];
         require(proposal.id != 0, "Proposal does not exist");
         require(proposal.status == ProposalStatus.Approved, "Proposal not approved");
@@ -161,10 +201,8 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
         completedQueries[proposalId] = completedQuery;
         proposal.status = ProposalStatus.Completed;
 
-        // Remove from Approved array
         _removeFromStatusArray(ProposalStatus.Approved, proposalId);
 
-        // Add to Completed array
         proposalsByStatus[ProposalStatus.Completed].push(proposalId);
 
         emit QueryCompleted(proposalId, proposal.requester);
@@ -178,7 +216,6 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
     function _updateExpiredProposals(ProposalStatus status) internal {
         uint256[] storage statusProposals = proposalsByStatus[status];
 
-        // Use a temporary array to track expired proposals to avoid array modification during iteration
         uint256[] memory expiredIds = new uint256[](statusProposals.length);
         uint256 expiredCount = 0;
 
@@ -191,7 +228,6 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
             }
         }
 
-        // Process expired proposals
         for (uint256 i = 0; i < expiredCount; i++) {
             uint256 proposalId = expiredIds[i];
             proposals[proposalId].status = ProposalStatus.Expired;
@@ -262,5 +298,13 @@ contract Vault is ReentrancyGuard, Pausable, Ownable {
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function getGovernanceProposalId(uint256 proposalId) external view returns (uint256) {
+        return proposals[proposalId].governanceProposalId;
+    }
+
+    function isGovernanceProposalExecuted(uint256 governanceProposalId) external view returns (bool) {
+        return governanceProposalsExecuted[governanceProposalId];
     }
 }
