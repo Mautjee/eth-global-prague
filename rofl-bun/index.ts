@@ -2,6 +2,7 @@ import { Result, ok, err } from 'neverthrow';
 import type { Vault } from './types/contracts';
 import { provider } from './config';
 import { getProposalsByStatus, consumeProposal, ProposalState } from './vault';
+import duckdb from 'duckdb';
 
 const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | undefined, Error>> => {
     const status = ProposalState.Approved;
@@ -17,10 +18,32 @@ const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | un
     return ok(result.value[0]!);
 }
 
+const executeQueryProposal = async (proposal: Vault.QueryProposalStruct): Promise<Result<string, Error>> => {
+    const db = new duckdb.Database(':memory:');
+    let result = "";
+
+    // MOCK
+    db.run("CREATE TABLE Bas (id INT, name TEXT)");
+    db.run("INSERT INTO Bas VALUES (1, 'test')");
+    db.run("CREATE TABLE mauro (id INT, name TEXT)");
+    db.run("INSERT INTO mauro VALUES (1, 'test')");
+    db.run("CREATE TABLE merlijn (id INT, name TEXT)");
+    db.run("INSERT INTO merlijn VALUES (1, 'test')");
+
+
+    db.all(proposal.sqlQuery, (err, rows) => {
+        if (err) {
+            result = err.message;
+        }
+        result = rows.join('\n');
+    });
+    db.close();
+
+    return ok(result);
+}
 
 provider.on("block", async (blockNumber) => {
     console.log(`📬 New block received: ${blockNumber}`);
-
     const result = await scanForProposals();
 
     if (result.isErr()) {
@@ -31,15 +54,20 @@ provider.on("block", async (blockNumber) => {
         console.log(`No proposals found at status ${ProposalState.Approved}`);
         return;
     }
-
     console.log(`Proposal ID at status ${ProposalState.Approved}: ${result.value.id}`);
+    const executeResult = await executeQueryProposal(result.value);
 
-    const consumeResult = await consumeProposal(result.value.id, "0x0");
-
-    if (consumeResult.isErr()) {
-        console.error(`Error consuming proposal:`, consumeResult.error);
+    if (executeResult.isErr()) {
+        console.error(`Error executing proposal:`, executeResult.error);
+        return;
     }
+    console.log(`Proposal executed: ${executeResult.value}`);
 
+    // const consumeResult = await consumeProposal(result.value.id, executeResult.value);
+
+    // if (consumeResult.isErr()) {
+    //     console.error(`Error consuming proposal:`, consumeResult.error);
+    // }
 });
 
 // Set up initial error handling

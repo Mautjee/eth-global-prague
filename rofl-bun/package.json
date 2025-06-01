@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@oasisprotocol/sapphire-viem-v2": "^2.0.1",
+    "duckdb": "^1.2.1",
     "ethers": "^6.14.3",
     "neverthrow": "^8.2.0",
     "viem": "^2.30.5"
