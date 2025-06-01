@@ -15,6 +15,7 @@ task("deploy-vault", "Deploy the Vault contract with governance").setAction(asyn
   const [deployer] = await hre.ethers.getSigners();
   const appId = "0x123456789012345678901234567890123456789012";
 
+  console.log("deployer adderss: ", deployer.address);
   console.log("Deploying VaultToken...");
   const token = await deploy("VaultToken", {
     from: deployer.address,
@@ -137,8 +138,9 @@ task("vault:propose", "Propose a new query")
   .addParam("query", "The SQL query to propose")
   .addParam("publickey", "The public key for result encryption")
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const { ethers } = hre;
-    const vault = await ethers.getContract<Vault>("Vault");
+    // Get the VaultGovernor contract
+    const vaultAddress = "0xf6A981B3cc55f7370195A22cF719a42BB728A84c"; // VaultGovernor address on Sapphire testnet
+    const vault = (await hre.ethers.getContractAt("Vault", vaultAddress)) as unknown as Vault;
 
     const tx = await vault.proposeQuery(taskArgs.query, taskArgs.publickey);
     const receipt = await tx.wait();
@@ -151,11 +153,30 @@ task("vault:propose", "Propose a new query")
     }
   });
 
+task("vault:creatGovPropposal", "Propose a new query")
+  .addParam("id", "proposalId")
+  .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
+    // Get the VaultGovernor contract
+    const vaultAddress = "0xf6A981B3cc55f7370195A22cF719a42BB728A84c"; // VaultGovernor address on Sapphire testnet
+    const vault = (await hre.ethers.getContractAt("Vault", vaultAddress)) as unknown as Vault;
+
+    const tx = await vault.createGovernanceProposal(taskArgs.id);
+    const receipt = await tx.wait();
+
+    const event = receipt?.logs.find((log: any) => log.fragment?.name === "ProposalSubmitted");
+
+    if (event) {
+      const proposalId = event.data[1];
+      console.log(`Proposal crteated submitted with ID: ${proposalId}`);
+    }
+    console.log("no event emited");
+  });
+
 task("vault:approve", "Approve a query proposal")
   .addParam("id", "The proposal ID to approve")
   .setAction(async (taskArgs, hre: HardhatRuntimeEnvironment) => {
-    const { ethers } = hre;
-    const vault = await ethers.getContract<Vault>("Vault");
+    const vaultAddress = "0xf6A981B3cc55f7370195A22cF719a42BB728A84c"; // VaultGovernor address on Sapphire testnet
+    const vault = (await hre.ethers.getContractAt("Vault", vaultAddress)) as unknown as Vault;
 
     const tx = await vault.approveProposal(taskArgs.id);
     await tx.wait();
