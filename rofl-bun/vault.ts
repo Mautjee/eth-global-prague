@@ -1,6 +1,6 @@
 import { err, ok, Result } from "neverthrow";
 import type { BigNumberish } from "ethers";
-import { vaultContract } from "./config";
+import { vaultContract, vaultContractWithSigner } from "./config";
 
 // Enum for proposal states
 export enum ProposalState {
@@ -60,8 +60,8 @@ export async function getProposalDetails(proposalId: bigint): Promise<Result<{
 // Function to consume a proposal by providing the encrypted result
 export async function consumeProposal(proposalId: BigNumberish, encryptedResult: string): Promise<Result<void, Error>> {
   try {
-    // Call the consumeProposal function on the Vault contract
-    const tx = await vaultContract.consumeProposal(proposalId, encryptedResult);
+    // Call the consumeProposal function on the Vault contract with signer
+    const tx = await vaultContractWithSigner.consumeProposal(proposalId, encryptedResult);
     
     // Wait for the transaction to be mined
     await tx.wait();

@@ -1,41 +1,9 @@
-import { ethers } from "ethers";
-import { createWalletClient } from 'viem'
-import { mnemonicToAccount } from 'viem/accounts';
-import { sapphireTestnet } from 'viem/chains';
-import { sapphireHttpTransport, wrapWalletClient } from '@oasisprotocol/sapphire-viem-v2';
 import { Result, ok, err } from 'neverthrow';
 import type { Vault } from './types/contracts';
-import { VAULT_CONTRACT_ADDRESS, provider, vaultContract, DEV_MNEMONIC } from './config';
-import { getProposalsByStatus, getProposalDetails, consumeProposal, ProposalState } from './vault';
+import { provider } from './config';
+import { getProposalsByStatus, consumeProposal, ProposalState } from './vault';
 
-
-const account = mnemonicToAccount(DEV_MNEMONIC);
-
-const walletClient = await wrapWalletClient(createWalletClient({
-    account,
-    chain: sapphireTestnet,
-    transport: sapphireHttpTransport()
-}));
-
-// Function to read data from the Vault contract
-async function readVaultData(): Promise<Result<{ appId: string; owner: string; isPaused: boolean }, Error>> {
-    try {
-        // With TypeChain, we don't need to cast the functions anymore
-        const appId = await vaultContract.appId();
-        const owner = await vaultContract.owner();
-        const isPaused = await vaultContract.paused();
-
-        return ok({
-            appId: appId.toString(),
-            owner,
-            isPaused
-        });
-    } catch (error) {
-        return err(error instanceof Error ? error : new Error(String(error)));
-    }
-}
-
-const scanForProposals = async (): Promise<Result<void, Error>> => {
+const scanForProposals = async (): Promise<Result<Vault.QueryProposalStruct | undefined, Error>> => {
     const status = ProposalState.Approved;
     const result = await getProposalsByStatus(status);
 
@@ -46,33 +14,33 @@ const scanForProposals = async (): Promise<Result<void, Error>> => {
         return ok(undefined);
     }
 
-    const proposal = result.value[0];
-    console.log(`Proposal ID at status ${ProposalState[status]}: ${proposal.id}`);
-
-    // Example encrypted result - in a real scenario, this would be the actual encrypted data
-    const mockEncryptedResult = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
-    // Call consumeProposal
-    const consumeResult = await consumeProposal(proposal.id, mockEncryptedResult);
-
-    if (consumeResult.isErr()) {
-        console.error(`Error consuming proposal:`, consumeResult.error);
-    }
-
-    return ok(undefined);
+    return ok(result.value[0]!);
 }
 
 
 provider.on("block", async (blockNumber) => {
     console.log(`📬 New block received: ${blockNumber}`);
 
+    const result = await scanForProposals();
 
-    
+    if (result.isErr()) {
+        console.error(`Error scanning for proposals:`, result.error);
+        return;
+    }
+    if (result.value == undefined) {
+        console.log(`No proposals found at status ${ProposalState.Approved}`);
+        return;
+    }
 
-   
-}
+    console.log(`Proposal ID at status ${ProposalState.Approved}: ${result.value.id}`);
 
-);
+    const consumeResult = await consumeProposal(result.value.id, "0x0");
+
+    if (consumeResult.isErr()) {
+        console.error(`Error consuming proposal:`, consumeResult.error);
+    }
+
+});
 
 // Set up initial error handling
 provider.on("error", (error) => {
