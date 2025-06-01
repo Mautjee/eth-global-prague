@@ -1,0 +1,4 @@
+services:
+  tee-engine:
+    image: "docker.io/segerritsen/tee-engine-akave:latest@sha256:f663c8e1c1f48e8736bd733a34f18bb2ca454b68b3e46b7bf501ee50fe42e014"
+    platform: linux/amd64

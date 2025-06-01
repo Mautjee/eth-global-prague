@@ -1,4 +1,4 @@
-name: src
+name: tee-test
 version: 0.1.0
 tee: tdx
 kind: container
@@ -17,21 +17,29 @@ artifacts:
     compose: compose.yaml
 deployments:
   default:
-    app_id: rofl1qrhjgmyge7vuxl3h0d02jrvnl43jhwdwjyq6c943
+    app_id: rofl1qzshync9pv2als5y0n33wrjycwc2pp0y0u8yw3k4
     network: testnet
     paratime: sapphire
     admin: dev
+    oci_repository: rofl.sh/2257542f-75a8-496c-9181-9d65a164e20d:1748737704
     trust_root:
-      height: 26845933
-      hash: 8ce4a1d68b0058096f239762804580f430570f05f577b79b8ce5f2472fc3a662
+      height: 26852547
+      hash: 1009fe4dd739c715294ca0bcc86b7449a2f5f7a147285d581af319d75ccc9f75
     policy:
       quotes:
         pcs:
           tcb_validity_period: 30
           min_tcb_evaluation_data_number: 18
           tdx: {}
-      enclaves: []
+      enclaves:
+        - id: XcvoaxEEeEx7VVrzw3WlnlIObXv5UZDCGl27PV5Ap0gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+        - id: Fbpv9uMrmJdyRoSzjWx4ryfDKCUtopZZMfkg5oZe1wYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
       endorsements:
         - any: {}
       fees: endorsing_node
       max_expiration: 3
+    machines:
+      default:
+        provider: oasis1qp2ens0hsp7gh23wajxa4hpetkdek3swyyulyrmz
+        offer: playground_short
+        id: 00000000000000ab
